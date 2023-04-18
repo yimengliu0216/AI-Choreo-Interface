@@ -1,4 +1,11 @@
-assets/
-cgi-bin/
-generation_outputs/
-node_modules/
+/assets_misc/
+/generation_outputs/
+/node_modules/
+
+/cgi-bin/assets/
+/cgi-bin/body_models/
+/cgi-bin/prepare/
+/cgi-bin/train/
+/cgi-bin/visualize/
+/cgi-bin/a.json
+/cgi-bin/connect_old.py
