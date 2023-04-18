@@ -6,16 +6,12 @@ from io import BytesIO
 from multiprocessing import set_start_method
 from concurrent.futures import ThreadPoolExecutor as Executor
 
-
-
 import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'cgi-bin'))
 import sample
-import connect
 import visualize.vis_utils
 from utils.parser_util import sample_args
-
 
 
 
@@ -86,8 +82,6 @@ class meshHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             )
             return 
         
-            
-
 
 if __name__ == '__main__':
     # set_start_method('spawn')

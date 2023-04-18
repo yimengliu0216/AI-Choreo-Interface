@@ -7,14 +7,6 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <!-- <script src="three.js"></script> -->
-    <!-- <script type="module" src="three.module.js"></script> -->
-    <!-- <script src="Detector.js"></script> -->
-    <!-- <script type="module" src="OrbitControls.js"></script>
-    <script type="module" src="DragControls.js"></script>
-    <script type="module" src="OBJLoader.js"></script>
-    <script type="module" src="MTLLoader.js"></script> -->
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
     <link rel="preload" as="image" href="assets/loading.gif">
@@ -56,10 +48,6 @@
             background-color: teal;
             color: white; 
         }
-        /* .topmenubutton:active {
-            background-color: teal;
-            color: white; 
-        } */
         .topmenubutton.active {
             background-color: teal;
             color: white; 
@@ -68,58 +56,6 @@
         .disabled {
             opacity: 0.6;
             cursor: not-allowed;
-        }
-
-        /* .topmenubutton:visited { background-color: teal; color: white; }
-        .topmenubutton:focus { background-color: teal; color: white; } */
-
-        .headbutton, 
-        .bodybutton,
-        .legbutton,
-        .tailbutton, 
-        .armbutton {
-            cursor: pointer;
-            background-color: #f1f1f1;
-            color: teal;
-            margin: 15px;
-            width: 170px;
-            font-size: medium;
-        }
-
-        .headbutton:hover,
-        .bodybutton:hover,
-        .legbutton:hover,
-        .tailbutton:hover,
-        .armbutton:hover {
-            background-color: teal;
-            color: white; 
-        }
-
-        .headbutton.active,
-        .bodybutton.active,
-        .legbutton.active,
-        .tailbutton.active,
-        .armbutton.active {
-            background-color: teal;
-            color: white; 
-        }
-
-        .headbutton:visited,
-        .bodybutton:visited,
-        .legbutton:visited,
-        .tailbutton:visited,
-        .armbutton:visited { 
-            background-color: teal; 
-            color: white; 
-        }
-
-        .headbutton:focus,
-        .bodybutton:focus,
-        .legbutton:focus,
-        .tailbutton:focus,
-        .armbutton:focus { 
-            background-color: teal; 
-            color: white; 
         }
 
         /* Style the tab */
@@ -250,9 +186,6 @@
             float: right;
             margin-left: 5px;
         }
-        /* .active:after { */
-            /*content: "\2796"; /* Unicode character for "minus" sign (-) */
-        /*}*/ 
 
         .sidebutton button {
             background-color: #f1f1f1;
@@ -387,44 +320,16 @@
                     <button class="createbutton" style="width: 70px; height: 3em; text-align: center;" onclick="clickAnimateBtn(this)">Create</button>
                     <br>
                     <div class="previewbutton" style="margin-left: 15%; margin-top: 2px;">
-                        <!-- <button id="preview0"><img src="assets/preview_test.png"></button>
-                        <button id="preview1"><img src="assets/preview_test.png"></button>
-                        <button id="preview2"><img src="assets/preview_test.png"></button> -->
                     </div>
                 </div>
                 <button class="fa fa-plus" id="plusbutton" style="width: 30px; height: 30%; margin-left: 5%; margin-top: 1.5%;" onclick="clickPlusBtn()"></button>
-                <!-- <button class="createbutton" style="width: 100px; height: 3em; text-align: center; margin-top: 2%;" onclick="onClickConnectBtn()">Connect</button> -->
             </div>
-            <!-- <hr style="margin-top:12em;height:2px;border-width:0;color:lightgray;background-color:lightgray"> -->
-            <!-- <div style="height: 100px; margin-top: 1%; margin-bottom: 1%; margin-left: 3%; 
-            position:absolute; width:50%;">
-                <button type="button" class="collapsible">Hints</button>
-                <div class="content">
-                    
-                    <p><b>1. Short motion creation (10 secs)</b>    <i>--  generate one dance sequence</i><br><br>
-                        [Genre] A person is dancing ballet / hip-hop / waltz / jazz.<br>
-                        [Emotion] A person is dancing excitedly / sadly.<br>
-                        [Moves] A person bends down, stands up, and then rotates in a circle.<br>
-                        ......<br><br>
-                        <b>2. Long motion creation and connection (25 secs)</b>    <i>--  generate and connect two dance sequences</i><br><br>
-                        A person dances ballet; The person dances waltz elegantly.<br>
-                        ......
-                    </p>
-                </div>
-            </div> -->
         </div>
   
 
         <div id='ModelingArea' ondrop="drop(event)" ondragover="allowDrop(event)">
             <div style="height:100px; margin-bottom:-100px; position:absolute; top:30px; width:50%;" display="flex">
                 <div style="margin: 0px;display: flex; justify-content: space-around;">
-                    <!-- <button class="topmenubutton w3-btn w3-round-large" style="width: 10em; height: 3em;" onclick="clickAssembleBtn()">
-                        <span class="fa-stack fa-1x">
-                            <i class="fa fa-circle-o fa-stack-2x"></i>
-                            <strong class="fa-stack-1x">1</strong>
-                        </span> 
-                        <b>Clear Screen</b>
-                    </button> -->
                     <button id="downloadButton" class="topmenubutton w3-btn w3-round-large" 
                     style="width: 8em; height: 2.5em; margin-left: 72%;" 
                     onclick="clickAnimateBtn()">
