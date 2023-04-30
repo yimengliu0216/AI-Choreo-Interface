@@ -188,6 +188,9 @@ function init() {
 		blurDiv.parentNode.removeChild(blurDiv);
 		newImage = document.getElementById("load");
 		newImage.parentNode.removeChild(newImage);
+
+		// load the default tab
+		document.getElementById("defaultOpen").click();
 	});
 
 	// createPanel();

@@ -317,26 +317,21 @@
                 <button class="tablinks" onclick="openTab(event, 'Video')">Video</button>
             </div>
 
-            <script>
-                // Get the element with id="defaultOpen" and click on it
-                document.getElementById("defaultOpen").click();
-            </script>
-
             <!-- Text tab -->
-            <div id="Text" class="tabcontent"></div>
+            <div id="Text" class="tabcontent">
                 <h4 for="phone" style="margin-left: 5%; margin-top: 8%; margin-bottom: 5%;">Enter detailed descriptions:</h4>
                 <div id="text_prompt_group" style="position:absolute; width:50%">
                     <div id="text0" class="text_line" style="margin-left: 5%; margin-top: 10px" >
                         <button class="fa fa-minus" style="width: 30px; height: 30%; text-align: center;" onclick="clickMinusBtn(this)"></button>
                         <input type="text" class="textinput" id="text_prompt0" name="text_prompt" style="width:75%; height:3em;" placeholder="">
-                        <button class="createbutton" style="width: 120px; height: 3em; text-align: center;" onclick="clickAnimateBtn(this)">Create/Edit</button>
+                        <button class="createbutton" style="width: 100px; height: 3em; text-align: center;" onclick="clickAnimateBtn(this)">Create/Edit</button>
                         <br>
                         <div class="previewbutton" style="margin-left: 15%; margin-top: 2px;">
                         </div>
                     </div>
                     <button class="fa fa-plus" id="plusbutton" style="width: 30px; height: 30%; margin-left: 5%; margin-top: 1.5%;" onclick="clickPlusBtn()"></button>
                 </div>
-            
+            </div>
 
             <!-- Video tab -->
             <div id="Video" class="tabcontent">
@@ -345,7 +340,7 @@
                     <div id="text0" class="text_line" style="margin-left: 5%; margin-top: 10px" >
                         <button class="fa fa-minus" style="width: 30px; height: 30%; text-align: center;" onclick="clickMinusBtn(this)"></button>
                         <input type="text" class="textinput" id="text_prompt0" name="text_prompt" style="width:75%; height:3em;" placeholder="">
-                        <button class="createbutton" style="width: 120px; height: 3em; text-align: center;" onclick="clickAnimateBtn(this)">Create/Edit</button>
+                        <button class="createbutton" style="width: 100px; height: 3em; text-align: center;" onclick="clickAnimateBtn(this)">Create/Edit</button>
                         <br>
                         <div class="previewbutton" style="margin-left: 15%; margin-top: 2px;">
                         </div>
