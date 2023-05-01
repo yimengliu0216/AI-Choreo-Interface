@@ -740,6 +740,12 @@ function onClickDownloadBtn() {
 	}
 }
 
+function onClickKeyWord(keyword) {
+	var inputField = document.getElementById("text_prompt0");
+	inputField.value += keyword;
+	inputField.value += " ";
+}
+
 function openTab(evt, tabName) {
 	// Declare all variables
 	var i, tabcontent, tablinks;
@@ -759,7 +765,7 @@ function openTab(evt, tabName) {
 	// Show the current tab, and add an "active" class to the button that opened the tab
 	document.getElementById(tabName).style.display = "block";
 	evt.currentTarget.className += " active";
-  }
+}
 
 const link = document.createElement( 'a' );
 link.style.display = 'none';
@@ -785,5 +791,6 @@ window.clickMotionBtn = onClickMotionBtn;
 window.clickConnectBtn = onClickConnectBtn;
 window.clickMinusBtn = onClickMinusBtn;
 window.clickPlusBtn = onClickPlusBtn;
+window.clickKeyWord = onClickKeyWord;
 window.playPause = playPause;
 window.openTab = openTab;
