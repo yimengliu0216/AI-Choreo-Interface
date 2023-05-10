@@ -489,10 +489,8 @@ function onClickAnimateBtn(element) {
 	const text_prompt_group = element.parentElement; 
 	const preview_element = text_prompt_group.getElementsByClassName("previewbutton")[0];
 	const gallery_element = document.getElementById("history");
-	console.log(preview_element)
 	createPreviewBtn(preview_element)
 	addToGallery(gallery_element)
-	console.log("testing")
 
 	// get and send text content
 	var text_prompt_id = element.parentElement.getElementsByClassName("textinput")[0].id;
