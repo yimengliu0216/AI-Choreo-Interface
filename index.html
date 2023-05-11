@@ -373,8 +373,8 @@
                         </div>
                     </div>
                     <div style="margin-top: 5%;">
-                        <h4>History:</h4>
-                        <div id="history" class="scrollmenu" style="width:95%; height:10em; border:4px solid teal;">
+                        <h4>Gallery:</h4>
+                        <div id="gallery" class="scrollmenu" style="width:95%; height:10em; border:4px solid teal; background-color: lightgrey;">
                         </div>
                     </div>
             </div>
@@ -419,15 +419,8 @@
                     </div>
                 </div>
                 <div style="margin-top: 5%;">
-                    <h4>History:</h4>
-                    <div class="scrollmenu" style="width:95%; height:10em; border:4px solid teal;">
-                        <a>placeholder</a>
-                        <a>placeholder</a>
-                        <a>placeholder</a>
-                        <a>placeholder</a>
-                        <a>placeholder</a>
-                        <a>placeholder</a>
-                        <a>placeholder</a>
+                    <h4>Gallery:</h4>
+                    <div id="gallery" class="scrollmenu" style="width:95%; height:10em; border:4px solid teal; background-color: lightgrey;">
                     </div>
                 </div>
             </div>
@@ -437,8 +430,12 @@
         <div id='ModelingArea' ondrop="drop(event)" ondragover="allowDrop(event)">
             <div style="height:100px; margin-bottom:-100px; position:absolute; top:30px; width:50%;" display="flex">
                 <div style="margin: 0px;display: flex; justify-content: space-around;">
+                    <button style="width: 8em; height: 2.5em; margin-left: 60%;" class="topmenubutton w3-btn w3-round-large" 
+                    onclick="addToGallery()">
+                        <i class="fa fa-book" aria-hidden="true"></i>
+                        Add to Gallery</button>
                     <button id="downloadButton" class="topmenubutton w3-btn w3-round-large" 
-                    style="width: 8em; height: 2.5em; margin-left: 72%;" 
+                    style="width: 8em; height: 2.5em;" 
                     onclick="clickAnimateBtn()">
                     <i class="fa fa-download"></i> Download
                     </button>

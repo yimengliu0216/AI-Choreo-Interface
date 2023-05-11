@@ -460,18 +460,21 @@ function createPreviewBtn(preview_element) {
 	}
 }
 
-function addToGallery(element) {
-	for (let i = 0; i < 3; i++) {
-		var newImage = document.createElement("img");
-		newImage.src = "assets/loading.gif";
-		newImage.width = 130;
-		newImage.height = 130;
-		var newButton = document.createElement("button");
-		newButton.appendChild(newImage);
-		newButton.id = "gallery" + String(i);
-		element.appendChild(newButton);
-
-		newButton.onclick = onClickMotionBtn.bind(newButton);
+function onAddToGallery() {
+	const gallery_elements = document.getElementsByClassName("scrollmenu")
+	for (let i = 0; i < gallery_elements.length; i++) {
+		for (let i = 0; i < 3; i++) {
+			var newImage = document.createElement("img");
+			newImage.src = "assets/loading.gif";
+			newImage.width = 130;
+			newImage.height = 130;
+			var newButton = document.createElement("button");
+			newButton.appendChild(newImage);
+			newButton.id = "gallery" + String(i);
+			gallery_elements[i].appendChild(newButton);
+	
+			newButton.onclick = onClickMotionBtn.bind(newButton);
+		}	
 	}
 }
 
@@ -488,9 +491,7 @@ function onClickAnimateBtn(element) {
 	// create preview buttons
 	const text_prompt_group = element.parentElement; 
 	const preview_element = text_prompt_group.getElementsByClassName("previewbutton")[0];
-	const gallery_element = document.getElementById("history");
 	createPreviewBtn(preview_element)
-	addToGallery(gallery_element)
 
 	// get and send text content
 	var text_prompt_id = element.parentElement.getElementsByClassName("textinput")[0].id;
@@ -811,3 +812,4 @@ window.clickPlusBtn = onClickPlusBtn;
 window.clickKeyWord = onClickKeyWord;
 window.playPause = playPause;
 window.openTab = openTab;
+window.addToGallery = onAddToGallery;
