@@ -297,11 +297,14 @@ function onClickMinusBtn(element) {
 	if (numinput == 1 && document.getElementById("connectbutton") != undefined) {
 		// add plus button
 		var plusBtn = document.createElement("button");
+		var parentElement = document.getElementById("text_prompt_group");
+		var firstChild = document.getElementById("selection");
 		plusBtn.id = "plusbutton";
 		plusBtn.className = "fa fa-plus";
 		plusBtn.style.cssText = "width: 30px; height: 30%; margin-left: 5%; margin-top: 1.5%;"
 		plusBtn.setAttribute("onClick", "javascript: clickPlusBtn();");
-		document.getElementById("text_prompt_group").appendChild(plusBtn);
+		//document.getElementById("text0").appendChild(plusBtn);
+		parentElement.insertBefore(plusBtn, firstChild);
 		// remove connect button
 		var connectBtn = document.getElementById("connectbutton");
 		connectBtn.parentNode.removeChild(connectBtn);
