@@ -188,6 +188,9 @@ function init() {
 		blurDiv.parentNode.removeChild(blurDiv);
 		newImage = document.getElementById("load");
 		newImage.parentNode.removeChild(newImage);
+
+		// load the default tab
+		document.getElementById("defaultOpen").click();
 	});
 
 	// createPanel();
@@ -294,11 +297,14 @@ function onClickMinusBtn(element) {
 	if (numinput == 1 && document.getElementById("connectbutton") != undefined) {
 		// add plus button
 		var plusBtn = document.createElement("button");
+		var parentElement = document.getElementById("text_prompt_group");
+		var firstChild = document.getElementById("selection");
 		plusBtn.id = "plusbutton";
 		plusBtn.className = "fa fa-plus";
 		plusBtn.style.cssText = "width: 30px; height: 30%; margin-left: 5%; margin-top: 1.5%;"
 		plusBtn.setAttribute("onClick", "javascript: clickPlusBtn();");
-		document.getElementById("text_prompt_group").appendChild(plusBtn);
+		//document.getElementById("text0").appendChild(plusBtn);
+		parentElement.insertBefore(plusBtn, firstChild);
 		// remove connect button
 		var connectBtn = document.getElementById("connectbutton");
 		connectBtn.parentNode.removeChild(connectBtn);
@@ -454,6 +460,24 @@ function createPreviewBtn(preview_element) {
 		preview_element.appendChild(newButton);
 
 		newButton.onclick = onClickMotionBtn.bind(newButton);
+	}
+}
+
+function onAddToGallery() {
+	const gallery_elements = document.getElementsByClassName("scrollmenu")
+	for (let i = 0; i < gallery_elements.length; i++) {
+		for (let i = 0; i < 3; i++) {
+			var newImage = document.createElement("img");
+			newImage.src = "assets/loading.gif";
+			newImage.width = 130;
+			newImage.height = 130;
+			var newButton = document.createElement("button");
+			newButton.appendChild(newImage);
+			newButton.id = "gallery" + String(i);
+			gallery_elements[i].appendChild(newButton);
+	
+			newButton.onclick = onClickMotionBtn.bind(newButton);
+		}	
 	}
 }
 
@@ -736,6 +760,34 @@ function onClickDownloadBtn() {
 		);
 	}
 }
+
+function onClickKeyWord(keyword) {
+	var inputField = document.getElementById("text_prompt0");
+	inputField.value += keyword;
+	inputField.value += " ";
+}
+
+function openTab(evt, tabName) {
+	// Declare all variables
+	var i, tabcontent, tablinks;
+  
+	// Get all elements with class="tabcontent" and hide them
+	tabcontent = document.getElementsByClassName("tabcontent");
+	for (i = 0; i < tabcontent.length; i++) {
+	  tabcontent[i].style.display = "none";
+	}
+  
+	// Get all elements with class="tablinks" and remove the class "active"
+	tablinks = document.getElementsByClassName("tablinks");
+	for (i = 0; i < tablinks.length; i++) {
+	  tablinks[i].className = tablinks[i].className.replace(" active", "");
+	}
+  
+	// Show the current tab, and add an "active" class to the button that opened the tab
+	document.getElementById(tabName).style.display = "block";
+	evt.currentTarget.className += " active";
+}
+
 const link = document.createElement( 'a' );
 link.style.display = 'none';
 document.body.appendChild( link );
@@ -760,4 +812,7 @@ window.clickMotionBtn = onClickMotionBtn;
 window.clickConnectBtn = onClickConnectBtn;
 window.clickMinusBtn = onClickMinusBtn;
 window.clickPlusBtn = onClickPlusBtn;
+window.clickKeyWord = onClickKeyWord;
 window.playPause = playPause;
+window.openTab = openTab;
+window.addToGallery = onAddToGallery;
