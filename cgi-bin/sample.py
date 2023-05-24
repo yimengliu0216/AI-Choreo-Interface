@@ -147,32 +147,6 @@ class Sampler:
 
         resizers = range_t = None
 
-        if 'upper body' in texts[0]:
-            input_motions = self.text_to_raw_motion(model_kwargs, model, n_frames)
-            model_kwargs['y']['text'] = texts
-            model_kwargs['y']['inpainted_motion'] = input_motions
-
-            model_kwargs['y']['inpainting_mask'] = torch.tensor(humanml_utils.HML_LOWER_BODY_MASK, 
-                                                    dtype=torch.bool,
-                                                    device=input_motions.device)  # True is lower body data
-            model_kwargs['y']['inpainting_mask'] = model_kwargs['y']['inpainting_mask'].unsqueeze(0).unsqueeze(-1).unsqueeze(-1).repeat(
-                                                    input_motions.shape[0], 
-                                                    1, 
-                                                    input_motions.shape[2], 
-                                                    input_motions.shape[3])
-        if 'lower body' in texts[0]:
-            input_motions = self.text_to_raw_motion(model_kwargs, model, n_frames)
-            model_kwargs['y']['text'] = texts
-            model_kwargs['y']['inpainted_motion'] = input_motions
-
-            model_kwargs['y']['inpainting_mask'] = torch.tensor(humanml_utils.HML_UPPER_BODY_MASK, 
-                                                    dtype=torch.bool,
-                                                    device=input_motions.device)  # True is upper body data
-            model_kwargs['y']['inpainting_mask'] = model_kwargs['y']['inpainting_mask'].unsqueeze(0).unsqueeze(-1).unsqueeze(-1).repeat(
-                                                    input_motions.shape[0], 
-                                                    1, 
-                                                    input_motions.shape[2], 
-                                                    input_motions.shape[3])
         # if 'style' in texts[0]:
         #     input_motions = self.text_to_raw_motion(model_kwargs, model, n_frames)
             
@@ -337,6 +311,110 @@ class Sampler:
             all_lengths.append(active_motion_raw.shape[-1]
                                - surfix_frames 
                                + model_kwargs['y']['lengths'].cpu().numpy())
+
+            print(f"created {len(all_motions) * num_samples } samples")
+
+        all_motions = np.concatenate(all_motions, axis=0)
+        all_lengths = np.concatenate(all_lengths, axis=0) 
+
+        ret_dict = {'motion': all_motions, 'text': all_text, 'lengths': all_lengths,
+                    'num_samples': num_samples, 'num_repetitions': 1}
+
+        # save ret_dict as npy and animations for video display as mp4
+        # out_path = os.path.join(
+        #     self.output_dir, url1 + url2)
+        # all_save_files = self.save_npy_mp4(out_path, ret_dict)
+
+        return ret_dict # all_save_files
+
+
+    def partial_edit(self, active_url, partial_body, partial_body_text):
+        with open(active_url + '.pkl', 'rb') as f:
+            active_motion = pickle.load(f)
+        
+        texts = [partial_body_text]
+        active_motion_raw = active_motion['motion_raw']
+        
+        n_frames = int(active_motion['lengths'])
+
+        partial_edit_motion = torch.from_numpy(active_motion_raw).to(dist_util.dev())
+
+        _, model_kwargs = collate(
+            [{'inp': torch.tensor([[0.]]), 'target': 0, 'text': txt, 'tokens': None, 'lengths': n_frames}
+            for txt in texts] * self.num_repetitions
+        )
+        model_kwargs['y']['text'] = partial_body_text
+        model_kwargs['y']['inpainted_motion'] = partial_edit_motion
+        model_kwargs['y']['inpainting_mask'] = torch.ones_like(partial_edit_motion, dtype=torch.bool)    
+
+        if partial_body == 'Upper Body':
+            model_kwargs['y']['inpainting_mask'] = torch.tensor(humanml_utils.HML_LOWER_BODY_MASK, 
+                                                    dtype=torch.bool,
+                                                    device=partial_edit_motion.device)  # True is lower body data
+            model_kwargs['y']['inpainting_mask'] = model_kwargs['y']['inpainting_mask'].unsqueeze(0).unsqueeze(-1).unsqueeze(-1).repeat(
+                                                    partial_edit_motion.shape[0], 
+                                                    1, 
+                                                    partial_edit_motion.shape[2], 
+                                                    partial_edit_motion.shape[3])
+        if partial_body == 'Lower Body':
+            model_kwargs['y']['inpainting_mask'] = torch.tensor(humanml_utils.HML_UPPER_BODY_MASK, 
+                                                    dtype=torch.bool,
+                                                    device=partial_edit_motion.device)  # True is upper body data
+            model_kwargs['y']['inpainting_mask'] = model_kwargs['y']['inpainting_mask'].unsqueeze(0).unsqueeze(-1).unsqueeze(-1).repeat(
+                                                    partial_edit_motion.shape[0], 
+                                                    1, 
+                                                    partial_edit_motion.shape[2], 
+                                                    partial_edit_motion.shape[3])
+
+        # load model
+        if self.guidance_param != 1:
+            model = ClassifierFreeSampleModel(self.model)
+        else:
+            model = self.model
+        model.to(dist_util.dev())
+        model.eval()  # disable random masking
+
+        # start sampling
+        all_motions = []
+        all_motions_raw = []
+        all_lengths = []
+        all_text = []
+        num_samples = 1
+        if 1:
+            print(f'### Start sampling')
+
+            # add CFG scale to batch
+            if self.guidance_param != 1:
+                model_kwargs['y']['scale'] = torch.ones(num_samples, device=dist_util.dev()) * self.guidance_param
+
+            sample_fn = self.diffusion.p_sample_loop
+
+            sample = sample_fn(
+                self.model,
+                (num_samples, model.njoints, model.nfeats, n_frames),
+                clip_denoised=False,
+                model_kwargs=model_kwargs,
+                skip_timesteps=0,  # 0 is the default value - i.e. don't skip any step
+                init_image=None,
+                progress=True,
+                dump_steps=None,
+                noise=None,
+                const_noise=False,
+            )
+
+            sample = sample.cpu()
+
+            all_motions_raw.append(sample.numpy())
+            # Recover XYZ *positions* from HumanML3D vector representation
+            if model.data_rep == 'hml_vec':
+                n_joints = 22 if sample.shape[1] == 263 else 21
+                sample = self.data.dataset.t2m_dataset.inv_transform(sample.permute(0, 2, 3, 1)).float()
+                sample = recover_from_ric(sample, n_joints)
+                sample = sample.view(-1, *sample.shape[2:]).permute(0, 2, 3, 1)
+
+            all_text += model_kwargs['y']['text']
+            all_motions.append(sample.numpy())
+            all_lengths.append(model_kwargs['y']['lengths'].cpu().numpy())
 
             print(f"created {len(all_motions) * num_samples } samples")
 

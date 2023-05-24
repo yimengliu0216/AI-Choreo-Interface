@@ -64,9 +64,19 @@ class meshHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.send_header("Content-Length", str(len(all_save_files_json)))
             self.end_headers()
             return BytesIO(all_save_files_json.encode())
-        
+
         elif 'url' in query and 'extendlen' in query:
             motion = sampler.extend(query['url'][0], query['extendlen'][0]) # motion, len
+            motion_json = json.dumps(renderer.render(motion))
+
+            self.send_response(HTTPStatus.OK)
+            self.send_header("Content-type", "application/json")
+            self.send_header("Content-Length", str(len(motion_json)))
+            self.end_headers()
+            return BytesIO(motion_json.encode())
+        
+        elif 'url' in query and 'selected_partial_body' in query and 'text_partial_edit' in query:
+            motion = sampler.partial_edit(query['url'][0], query['selected_partial_body'][0], query['text_partial_edit'][0]) # motion, partial body, text
             motion_json = json.dumps(renderer.render(motion))
 
             self.send_response(HTTPStatus.OK)

@@ -410,6 +410,25 @@ function applyAnimation(url) {
 
 var activePreviews;
 
+function clickPartialBodyEditBtn(element) {
+	// edit selected motion
+	if (activePreviews.length == 1) {
+		var activeUrl = activePreviews[0].id
+	}
+	else {
+		window.alert("Please select one motion to edit.");
+	}
+
+	var selected_partial_body = document.getElementById("partial_body_dropdown").value;
+	var text_partial_edit = element.parentElement.getElementsByClassName("partialbodyedittext")[0];
+	
+	let url = ('cgi-bin/gen_mesh.py?url=' + activeUrl + 
+	'&selected_partial_body=' + encodeURIComponent(selected_partial_body) + 
+	'&text_partial_edit=' + encodeURIComponent(text_partial_edit.value))
+	
+	applyAnimation(url);
+}
+
 function clickExtendBtn(element) {
 
 	// edit selected motion
@@ -502,23 +521,6 @@ function onAddToGallery() {
 	}
 }
 
-function onAddToGallery() {
-	const gallery_elements = document.getElementsByClassName("scrollmenu")
-	for (let i = 0; i < gallery_elements.length; i++) {
-		for (let i = 0; i < 3; i++) {
-			var newImage = document.createElement("img");
-			newImage.src = "assets/loading.gif";
-			newImage.width = 130;
-			newImage.height = 130;
-			var newButton = document.createElement("button");
-			newButton.appendChild(newImage);
-			newButton.id = "gallery" + String(i);
-			gallery_elements[i].appendChild(newButton);
-	
-			newButton.onclick = onClickMotionBtn.bind(newButton);
-		}	
-	}
-}
 
 function onClickAnimateBtn(element) {
 	AnimateBtnClicked = true; 
@@ -828,33 +830,6 @@ function openTab(evt, tabName) {
 }
 
 
-function onClickKeyWord(keyword) {
-	var inputField = document.getElementById("text_prompt0");
-	inputField.value += keyword;
-	inputField.value += " ";
-}
-
-function openTab(evt, tabName) {
-	// Declare all variables
-	var i, tabcontent, tablinks;
-  
-	// Get all elements with class="tabcontent" and hide them
-	tabcontent = document.getElementsByClassName("tabcontent");
-	for (i = 0; i < tabcontent.length; i++) {
-	  tabcontent[i].style.display = "none";
-	}
-  
-	// Get all elements with class="tablinks" and remove the class "active"
-	tablinks = document.getElementsByClassName("tablinks");
-	for (i = 0; i < tablinks.length; i++) {
-	  tablinks[i].className = tablinks[i].className.replace(" active", "");
-	}
-  
-	// Show the current tab, and add an "active" class to the button that opened the tab
-	document.getElementById(tabName).style.display = "block";
-	evt.currentTarget.className += " active";
-}
-
 const link = document.createElement( 'a' );
 link.style.display = 'none';
 document.body.appendChild( link );
@@ -885,3 +860,4 @@ window.playPause = playPause;
 window.openTab = openTab;
 window.addToGallery = onAddToGallery;
 window.clickExtendBtn = clickExtendBtn;
+window.clickPartialBodyEditBtn = clickPartialBodyEditBtn; 

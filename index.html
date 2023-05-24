@@ -372,7 +372,7 @@
                             <div style="display: flex; flex-direction: row;">
                                 <h5>Choose a quality factor: </h5>
                                 <select name="Quality" id="quality" style="margin-left: 3%; height:3em;">
-                                    <option value=""></option>
+                                    <option value="">--Please choose an option--</option>
                                     <option value="Angry">Angry</option>
                                     <option value="Childlike">Childlike</option>
                                     <option value="Depressed">Depressed</option>
@@ -387,16 +387,16 @@
                         <div>
                             <div style="display: flex; flex-direction: row; margin-bottom: 2%;">
                                 <h5>Choose a partial body to edit: </h5>
-                                <select name="Partial Body" id="partial_body" style="margin-left: 3%; height:3em;">
-                                    <option value=""></option>
-                                    <option value="Upper Body">Upper Body</option>
-                                    <option value="Lower Body">Lower Body</option>
+                                <select name="Partial Body" id="partial_body_dropdown" style="margin-left: 3%; height:3em;">
+                                    <option value="">--Please choose an option--</option>
+                                    <option value="Upper Body" id="upper_body">Upper Body</option>
+                                    <option value="Lower Body" id="lower_body">Lower Body</option>
                                 </select>
                             </div>
                             <div style="display: flex; flex-direction: row;">
                                 <h5>Enter the descriptions: </h5>
-                                <input type="text" style="margin-left: 3%; width:55%; height:3em;" placeholder="">
-                                <button style="margin-left: 3%; width: 80px; height:3em;">Edit</button>
+                                <input type="text" class="partialbodyedittext" style="margin-left: 3%; width:55%; height:3em;" placeholder="">
+                                <button style="margin-left: 3%; width: 80px; height:3em;" onclick="clickPartialBodyEditBtn(this)">Edit</button>
                             </div>
                         </div>
                     </div>
