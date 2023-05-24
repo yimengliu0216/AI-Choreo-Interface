@@ -2,8 +2,13 @@
 /generation_outputs/
 /node_modules/
 
+/vibe/
+vibe_MDM_test.py
+save_bvh_test.ipynb
+
 /cgi-bin/assets/
 /cgi-bin/body_models/
+/cgi-bin/generation_outputs/
 /cgi-bin/prepare/
 /cgi-bin/train/
 /cgi-bin/visualize/

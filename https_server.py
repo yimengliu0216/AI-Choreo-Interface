@@ -52,7 +52,7 @@ class meshHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         query = parse.parse_qs(query)
         
         if 'text' in query:
-            motion, all_save_files = sampler.infer(query['text'][0], 9.8)
+            motion, all_save_files = sampler.infer(query['text'][0], 9.8) # text, len
             for fn in all_save_files:
                 executer.submit(renderer.render2json, fn + '.pkl', fn + '.json')
                 # renderer.render2json(fn + '.pkl', fn + '.json')
@@ -64,9 +64,19 @@ class meshHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.send_header("Content-Length", str(len(all_save_files_json)))
             self.end_headers()
             return BytesIO(all_save_files_json.encode())
+        
+        elif 'url' in query and 'extendlen' in query:
+            motion = sampler.extend(query['url'][0], query['extendlen'][0]) # motion, len
+            motion_json = json.dumps(renderer.render(motion))
 
+            self.send_response(HTTPStatus.OK)
+            self.send_header("Content-type", "application/json")
+            self.send_header("Content-Length", str(len(motion_json)))
+            self.end_headers()
+            return BytesIO(motion_json.encode())
+        
         elif 'url1' in query and 'url2' in query:
-            motion = sampler.connect(query['url1'][0], query['url2'][0])
+            motion = sampler.connect(query['url1'][0], query['url2'][0]) # motion1, motion2
             motion_json = json.dumps(renderer.render(motion))
 
             self.send_response(HTTPStatus.OK)

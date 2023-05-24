@@ -613,6 +613,8 @@ class GaussianDiffusion:
         cond_fn_with_grad=False,
         dump_steps=None,
         const_noise=False,
+        resizers=None,
+        range_t=0
     ):
         """
         Generate samples from the model.
@@ -653,6 +655,8 @@ class GaussianDiffusion:
             randomize_class=randomize_class,
             cond_fn_with_grad=cond_fn_with_grad,
             const_noise=const_noise,
+            resizers=resizers,
+            range_t=range_t
         )):
             if dump_steps is not None and i in dump_steps:
                 dump.append(deepcopy(sample["sample"]))
@@ -677,6 +681,8 @@ class GaussianDiffusion:
         randomize_class=False,
         cond_fn_with_grad=False,
         const_noise=False,
+        resizers=None,
+        range_t=0,
     ):
         """
         Generate samples from the model and yield intermediate samples from
@@ -708,6 +714,9 @@ class GaussianDiffusion:
             from tqdm.auto import tqdm
 
             indices = tqdm(indices)
+        
+        if resizers is not None:
+            down, up = resizers #based on ILVR for harmonization
 
         for i in indices:
             t = th.tensor([i] * shape[0], device=device)
@@ -727,6 +736,13 @@ class GaussianDiffusion:
                     model_kwargs=model_kwargs,
                     const_noise=const_noise,
                 )
+                # harmonization based on https://github.com/jychoi118/ilvr_adm
+                if resizers is not None:
+                    if i > range_t:
+                        # Use low pass of ref and high freq of sample
+                        out["sample"] = out["sample"] - up(down(out["sample"])) + up(
+                            down(self.q_sample(model_kwargs["y"]["ref_img"], t, th.randn(*shape, device=device))))
+                
                 yield out
                 img = out["sample"]
 

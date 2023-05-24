@@ -162,7 +162,7 @@ def add_sampling_options(parser):
 def add_edit_options(parser):
     group = parser.add_argument_group('edit')
     group.add_argument("--edit_mode", default='blending', 
-                        choices=['in_between', 'upper_body', 'out_painting', 'blending'], 
+                        choices=['in_between', 'upper_body', 'out_painting', 'blending', 'harmonization'], 
                         type=str,
                         help="Defines which parts of the input motion will be edited.\n"
                             "(1) in_between - suffix and prefix motion taken from input motion, "
@@ -170,7 +170,8 @@ def add_edit_options(parser):
                             "(2) upper_body - lower body joints taken from input motion, "
                             "upper body is generated.\n"
                             "(3) out_painting - future motion prediction.\n"
-                            "(4) blending - connect two motion sequences.")
+                            "(4) blending - connect two motion sequences.\n"
+                            "(5) harmonization - harmonization for style transfer.")
     group.add_argument("--text_condition", default='', type=str,
                        help="Editing will be conditioned on this text prompt. "
                             "If empty, will perform unconditioned editing.")

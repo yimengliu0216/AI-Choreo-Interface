@@ -16,6 +16,8 @@ from data_loaders.humanml.scripts.motion_process import recover_from_ric
 import data_loaders.humanml.utils.paramUtil as paramUtil
 from data_loaders.humanml.utils.plot_script import plot_3d_motion
 from data_loaders import humanml_utils
+import torch.nn.functional as F
+from functools import partial
 import shutil
 from data_loaders.tensors import collate
 import hashlib
@@ -108,6 +110,8 @@ class Sampler:
             dump_steps=None,
             noise=None,
             const_noise=False,
+            resizers=None,
+            range_t=None
         )
 
         all_motions.append(sample.cpu())
@@ -117,36 +121,16 @@ class Sampler:
 
     def infer(self, text_prompt, motion_length):
        
-        # args.text_prompt = text
-        # fixseed(args.seed)
         out_path = os.path.join(
             self.output_dir, 
             text_prompt[0:30].replace(' ', '_') + '@' + hashlib.sha256(text_prompt.encode()).hexdigest())
-        # name = os.path.basename(os.path.dirname(args.model_path))
-        # niter = os.path.basename(args.model_path).replace('model', '').replace('.pt', '')
         
         n_frames = min(self.max_frames, int(motion_length*self.fps))
         
         dist_util.setup_dist(self.device)
-        # if out_path == '':
-        #     out_path = os.path.join(os.path.dirname(args.model_path),
-        #                             'samples_{}_{}_seed{}'.format(name, niter, args.seed))
-        #     if args.text_prompt != '':
-        #         out_path += '_' + args.text_prompt.replace(' ', '_').replace('.', '')
-        #     elif args.input_text != '':
-        #         out_path += '_' + os.path.basename(args.input_text).replace('.txt', '').replace(' ', '_').replace('.', '')
-
         
         texts = [text_prompt]
         num_samples = 1
-
-        # assert args.num_samples <= args.batch_size, \
-        #     f'Please either increase batch_size({args.batch_size}) or reduce num_samples({args.num_samples})'
-        # # So why do we need this check? In order to protect GPU from a memory overload in the following line.
-        # # If your GPU can handle batch size larger then default, you can specify it through --batch_size flag.
-        # # If it doesn't, and you still want to sample more prompts, run this script with different seeds
-        # # (specify through the --seed flag)
-        # args.batch_size = args.num_samples  # Sampling a single batch from the testset, with exactly args.num_samples
 
         if self.guidance_param != 1:
             model = ClassifierFreeSampleModel(self.model)   # wrapping model with the classifier-free sampler
@@ -161,7 +145,9 @@ class Sampler:
             for txt in texts] * self.num_repetitions
         )
 
-        if 'upper body' in texts:
+        resizers = range_t = None
+
+        if 'upper body' in texts[0]:
             input_motions = self.text_to_raw_motion(model_kwargs, model, n_frames)
             model_kwargs['y']['text'] = texts
             model_kwargs['y']['inpainted_motion'] = input_motions
@@ -174,7 +160,7 @@ class Sampler:
                                                     1, 
                                                     input_motions.shape[2], 
                                                     input_motions.shape[3])
-        if 'lower body' in texts:
+        if 'lower body' in texts[0]:
             input_motions = self.text_to_raw_motion(model_kwargs, model, n_frames)
             model_kwargs['y']['text'] = texts
             model_kwargs['y']['inpainted_motion'] = input_motions
@@ -187,6 +173,20 @@ class Sampler:
                                                     1, 
                                                     input_motions.shape[2], 
                                                     input_motions.shape[3])
+        # if 'style' in texts[0]:
+        #     input_motions = self.text_to_raw_motion(model_kwargs, model, n_frames)
+            
+        #     print("Creating ressizers...")
+        #     if input_motions.shape[-1] % 2 != 0:
+        #         input_motions = input_motions[..., :-1]
+        #         n_frames -= 1
+        #     scale = 2
+        #     range_t = 20
+        #     down = partial(F.interpolate, mode='bilinear', align_corners=False, scale_factor=(1, 1/scale))
+        #     up = partial(F.interpolate, mode='bilinear', align_corners=False, scale_factor=(1, scale))
+        #     resizers = (down, up)
+        #     n_frames = input_motions.shape[-1]
+        #     model_kwargs['y']['ref_img'] = input_motions.to(dist_util.dev())
 
         all_motions = []
         all_motions_raw = []
@@ -214,6 +214,8 @@ class Sampler:
                 dump_steps=None,
                 noise=None,
                 const_noise=False,
+                resizers=resizers,
+                range_t=range_t
             )
 
 
@@ -233,7 +235,7 @@ class Sampler:
 
 
         all_motions = np.concatenate(all_motions, axis=0)
-        all_motions_raw = np.concatenate(all_motions_raw, axis=0)
+        all_motions_raw = np.concatenate(all_motions_raw, axis=0) # [total_num_samples, 263, 1, length]
         # all_motions = all_motions[:total_num_samples]  # [bs, njoints, 6, seqlen]
         # all_text = all_text[:total_num_samples]
         all_lengths = np.concatenate(all_lengths, axis=0) #[:total_num_samples]
@@ -251,9 +253,111 @@ class Sampler:
         all_save_files = self.save_npy_mp4(out_path, ret_dict)
 
         return ret_dict, all_save_files
+    
+    def extend(self, active_url, extend_len):
+        with open(active_url + '.pkl', 'rb') as f:
+            active_motion = pickle.load(f)
+        
+        active_motion_text = active_motion['text']
+        texts = [active_motion_text]
+        active_motion_raw = active_motion['motion_raw']
+        
+        outpainting_frames = int(extend_len) * 20
+        surfix_frames = 4 * 20 # use the last 4s motion as condition for expanding
+        outpainting_total_frames = surfix_frames + outpainting_frames
+        n_frames = outpainting_total_frames
+
+        extend_motion = np.zeros((list(active_motion_raw.shape[:-1]) + [n_frames]), dtype=active_motion_raw.dtype)
+        
+        # form input motions for prediction
+        extend_motion[:, :, :, :surfix_frames] = active_motion_raw[0, :, :, -surfix_frames:]
+        extend_motion = torch.from_numpy(extend_motion).to(dist_util.dev())
+
+        _, model_kwargs = collate(
+            [{'inp': torch.tensor([[0.]]), 'target': 0, 'text': txt, 'tokens': None, 'lengths': n_frames}
+            for txt in texts] * self.num_repetitions
+        )
+        model_kwargs['y']['text'] = active_motion_text
+        model_kwargs['y']['inpainted_motion'] = extend_motion
+        model_kwargs['y']['inpainting_mask'] = torch.ones_like(extend_motion, dtype=torch.bool)    
+        model_kwargs['y']['inpainting_mask'][0, :, :, surfix_frames:] = False 
+
+        # load model
+        if self.guidance_param != 1:
+            model = ClassifierFreeSampleModel(self.model)
+        else:
+            model = self.model
+        model.to(dist_util.dev())
+        model.eval()  # disable random masking
+
+        # start sampling
+        all_motions = []
+        all_motions_raw = []
+        all_lengths = []
+        all_text = []
+        num_samples = 1
+        if 1:
+            print(f'### Start sampling')
+
+            # add CFG scale to batch
+            if self.guidance_param != 1:
+                model_kwargs['y']['scale'] = torch.ones(num_samples, device=dist_util.dev()) * self.guidance_param
+
+            sample_fn = self.diffusion.p_sample_loop
+
+            sample = sample_fn(
+                self.model,
+                (num_samples, model.njoints, model.nfeats, n_frames),
+                clip_denoised=False,
+                model_kwargs=model_kwargs,
+                skip_timesteps=0,  # 0 is the default value - i.e. don't skip any step
+                init_image=None,
+                progress=True,
+                dump_steps=None,
+                noise=None,
+                const_noise=False,
+            )
+
+            sample = sample.cpu()
+
+            sample = torch.concat((
+                torch.from_numpy(active_motion_raw[[0], :, :, :-surfix_frames]), 
+                sample), dim = 3)
+
+            all_motions_raw.append(sample.numpy())
+            # Recover XYZ *positions* from HumanML3D vector representation
+            if model.data_rep == 'hml_vec':
+                n_joints = 22 if sample.shape[1] == 263 else 21
+                sample = self.data.dataset.t2m_dataset.inv_transform(sample.permute(0, 2, 3, 1)).float()
+                sample = recover_from_ric(sample, n_joints)
+                sample = sample.view(-1, *sample.shape[2:]).permute(0, 2, 3, 1)
+
+            all_text += model_kwargs['y']['text']
+            all_motions.append(sample.numpy())
+            all_lengths.append(active_motion_raw.shape[-1]
+                               - surfix_frames 
+                               + model_kwargs['y']['lengths'].cpu().numpy())
+
+            print(f"created {len(all_motions) * num_samples } samples")
+
+        all_motions = np.concatenate(all_motions, axis=0)
+        all_lengths = np.concatenate(all_lengths, axis=0) 
+
+        ret_dict = {'motion': all_motions, 'text': all_text, 'lengths': all_lengths,
+                    'num_samples': num_samples, 'num_repetitions': 1}
+
+        # save ret_dict as npy and animations for video display as mp4
+        # out_path = os.path.join(
+        #     self.output_dir, url1 + url2)
+        # all_save_files = self.save_npy_mp4(out_path, ret_dict)
+
+        return ret_dict # all_save_files
+
 
     def connect(self, url1, url2): 
         # load selected motion pkls
+        # with open('./vibe/new_joint_vecs_vibe/dance_vibe_motion_raw.pkl', 'rb') as f:
+        #     motion1 = pickle.load(f)
         with open(url1 + '.pkl', 'rb') as f:
             motion1 = pickle.load(f)
         with open(url2 + '.pkl', 'rb') as f:
@@ -334,7 +438,9 @@ class Sampler:
 
             all_text += model_kwargs['y']['text']
             all_motions.append(sample.numpy())
-            all_lengths.append(2*motion1['motion'].shape[-1] - 2*surfix_frames + model_kwargs['y']['lengths'].cpu().numpy())
+            all_lengths.append(motion1['motion_raw'].shape[-1] + motion2['motion_raw'].shape[-1]
+                               - 2*surfix_frames 
+                               + model_kwargs['y']['lengths'].cpu().numpy())
 
             print(f"created {len(all_motions) * num_samples } samples")
 
@@ -355,4 +461,5 @@ class Sampler:
 # if __name__ == "__main__":
 #     args = sample_args()
 #     sampler = Sampler(args)
-#     sampler.infer(args.text_prompt, args.motion_length)
+#     # sampler.infer(args.text_prompt, args.motion_length)
+#     sampler.infer('dance', 5)
