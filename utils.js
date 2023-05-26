@@ -410,6 +410,21 @@ function applyAnimation(url) {
 
 var activePreviews;
 
+function clickQualityEditBtn(element) {
+	// edit selected motion
+	if (activePreviews.length == 1) {
+		var activeUrl = activePreviews[0].id
+	}
+	else {
+		window.alert("Please select one motion to edit.");
+	}
+
+	var selected_quality = document.getElementById("quality_dropdown").value;
+	let url = 'cgi-bin/gen_mesh.py?url=' + activeUrl + '&quality=' + encodeURIComponent(selected_quality)
+	applyAnimation(url);
+}
+
+
 function clickPartialBodyEditBtn(element) {
 	// edit selected motion
 	if (activePreviews.length == 1) {
@@ -861,3 +876,4 @@ window.openTab = openTab;
 window.addToGallery = onAddToGallery;
 window.clickExtendBtn = clickExtendBtn;
 window.clickPartialBodyEditBtn = clickPartialBodyEditBtn; 
+window.clickQualityEditBtn = clickQualityEditBtn;

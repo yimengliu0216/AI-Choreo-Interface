@@ -8,7 +8,7 @@ import os
 import numpy as np
 import torch
 from utils.parser_util import sample_args
-from utils.model_util import create_model_and_diffusion, load_model_wo_clip
+from utils.model_util import create_model_and_diffusion, create_model_and_diffusion_quality_edit, load_model_wo_clip, load_model
 from utils import dist_util
 from model.cfg_sampler import ClassifierFreeSampleModel
 from data_loaders.get_data import get_dataset_loader
@@ -147,21 +147,6 @@ class Sampler:
 
         resizers = range_t = None
 
-        # if 'style' in texts[0]:
-        #     input_motions = self.text_to_raw_motion(model_kwargs, model, n_frames)
-            
-        #     print("Creating ressizers...")
-        #     if input_motions.shape[-1] % 2 != 0:
-        #         input_motions = input_motions[..., :-1]
-        #         n_frames -= 1
-        #     scale = 2
-        #     range_t = 20
-        #     down = partial(F.interpolate, mode='bilinear', align_corners=False, scale_factor=(1, 1/scale))
-        #     up = partial(F.interpolate, mode='bilinear', align_corners=False, scale_factor=(1, scale))
-        #     resizers = (down, up)
-        #     n_frames = input_motions.shape[-1]
-        #     model_kwargs['y']['ref_img'] = input_motions.to(dist_util.dev())
-
         all_motions = []
         all_motions_raw = []
         all_lengths = []
@@ -236,8 +221,8 @@ class Sampler:
         texts = [active_motion_text]
         active_motion_raw = active_motion['motion_raw']
         
-        outpainting_frames = int(extend_len) * 20
-        surfix_frames = 4 * 20 # use the last 4s motion as condition for expanding
+        outpainting_frames = int(extend_len) * self.fps
+        surfix_frames = 4 * self.fps # use the last 4s motion as condition for expanding
         outpainting_total_frames = surfix_frames + outpainting_frames
         n_frames = outpainting_total_frames
 
@@ -534,6 +519,142 @@ class Sampler:
         # all_save_files = self.save_npy_mp4(out_path, ret_dict)
 
         return ret_dict # all_save_files
+
+
+class QualityEditor:
+    def __init__(self, args):
+
+        print('Loading dataset...')
+        self.max_frames = 196 if args.dataset in ['kit', 'humanml'] else 60
+        self.fps = 12.5 if args.dataset == 'kit' else 20
+        num_joints = None
+        
+        self.data = get_dataset_loader(name=args.dataset,
+                                batch_size=args.batch_size,
+                                num_frames=self.max_frames,
+                                split='test',
+                                hml_mode='text_only')
+        # self.data.fixed_length = n_frames
+        # total_num_samples = args.num_samples * args.num_repetitions
+
+        print("Creating model and diffusion...")
+        args.model_path = './cgi-bin/save/quality_models/Angry/Angry.pt'
+        args.arch = 'qna'
+        args.unconstrained = True
+        args.latent_dim = 128
+
+        self.model, self.diffusion = create_model_and_diffusion_quality_edit(args, self.data, num_joints)
+
+        print(f"Loading checkpoints from [{args.model_path}]...")
+        state_dict = torch.load(args.model_path, map_location='cpu')
+        load_model(self.model, state_dict)
+
+        self.device = args.device
+        self.output_dir = args.output_dir
+        self.guidance_param = args.guidance_param
+        self.num_samples = 1
+        self.num_repetitions = 1
+
+
+    def quality_edit(self, active_url, quality):
+        with open(active_url + '.pkl', 'rb') as f:
+            active_motion = pickle.load(f)
+
+        active_motion_raw = active_motion['motion_raw']
+        n_frames = int(active_motion['lengths'])
+
+        quality_edit_motion = torch.from_numpy(active_motion_raw).to(dist_util.dev())
+
+        model_kwargs = {}
+        model_kwargs['y'] = {}
+        model_kwargs['y']['text'] = active_motion['text']
+        model_kwargs['y']['lengths'] = torch.tensor(n_frames).repeat((self.num_samples))
+        model_kwargs['y']['inpainted_motion'] = quality_edit_motion # samples, joints, 1, frames
+
+        print("Creating ressizers...")
+        motion = quality_edit_motion
+        if quality_edit_motion.shape[-1] % 2 != 0:
+            motion = quality_edit_motion[..., :-1]
+            n_frames -= 1
+        scale = 2
+        range_t = 20
+        down = partial(F.interpolate, mode='bilinear', align_corners=False, scale_factor=(1, 1/scale))
+        up = partial(F.interpolate, mode='bilinear', align_corners=False, scale_factor=(1, scale))
+        resizers = (down, up)
+        model_kwargs["y"]["ref_img"] = motion
+        print(motion.shape)
+
+        # load model
+        model = self.model
+        model_dir = './cgi-bin/save/quality_models/'
+        model_path = model_dir + quality + '/' + quality + '.pt'
+
+        print(f"Loading checkpoints from [{model_path}]...")
+        state_dict = torch.load(model_path, map_location='cpu')
+        load_model(model, state_dict)
+
+        model.to(dist_util.dev())
+        model.eval()  # disable random masking
+
+        all_motions = []
+        all_motions_raw = []
+        all_lengths = []
+        all_text = []
+        num_samples = 1
+        # for rep_i in range(self.num_repetitions):
+        if 1:
+            print(f'### Start sampling')
+
+            # # add CFG scale to batch
+            # if self.guidance_param != 1:
+            #     model_kwargs['y']['scale'] = torch.ones(num_samples * self.num_repetitions, device=dist_util.dev()) * self.guidance_param
+
+            sample_fn = self.diffusion.p_sample_loop
+
+            sample = sample_fn(
+                self.model,
+                (num_samples * self.num_repetitions, model.njoints, model.nfeats, n_frames),
+                clip_denoised=False,
+                model_kwargs=model_kwargs,
+                skip_timesteps=0,  # 0 is the default value - i.e. don't skip any step
+                init_image=None,
+                progress=True,
+                dump_steps=None,
+                noise=None,
+                const_noise=False,
+                resizers=resizers,
+                range_t=range_t
+            )
+
+            sample = sample.cpu()
+
+            all_motions_raw.append(sample.numpy())
+            # Recover XYZ *positions* from HumanML3D vector representation
+            if model.data_rep == 'hml_vec':
+                n_joints = 22 if sample.shape[1] == 263 else 21
+                sample = self.data.dataset.t2m_dataset.inv_transform(sample.permute(0, 2, 3, 1)).float()
+                sample = recover_from_ric(sample, n_joints)
+                sample = sample.view(-1, *sample.shape[2:]).permute(0, 2, 3, 1)
+
+            all_text += model_kwargs['y']['text']
+            all_motions.append(sample.numpy())
+            all_lengths.append(model_kwargs['y']['lengths'].cpu().numpy())
+
+            print(f"created {len(all_motions) * num_samples } samples")
+
+        all_motions = np.concatenate(all_motions, axis=0)
+        all_lengths = np.concatenate(all_lengths, axis=0) 
+
+        ret_dict = {'motion': all_motions, 'text': all_text, 'lengths': all_lengths,
+                    'num_samples': num_samples, 'num_repetitions': self.num_repetitions}
+
+        # save ret_dict as npy and animations for video display as mp4
+        # out_path = os.path.join(
+        #     self.output_dir, url1 + url2)
+        # all_save_files = self.save_npy_mp4(out_path, ret_dict)
+
+        return ret_dict # all_save_files
+
 
 
 # if __name__ == "__main__":

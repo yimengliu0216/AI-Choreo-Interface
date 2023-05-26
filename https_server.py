@@ -11,7 +11,7 @@ import os
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'cgi-bin'))
 import sample
 import visualize.vis_utils
-from utils.parser_util import sample_args
+from utils.parser_util import sample_args, edit_args
 
 
 
@@ -85,6 +85,16 @@ class meshHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.end_headers()
             return BytesIO(motion_json.encode())
         
+        elif 'url' in query and 'quality' in query:
+            motion = quality_editor.quality_edit(query['url'][0], query['quality'][0]) # motion, partial body, text
+            motion_json = json.dumps(renderer.render(motion))
+
+            self.send_response(HTTPStatus.OK)
+            self.send_header("Content-type", "application/json")
+            self.send_header("Content-Length", str(len(motion_json)))
+            self.end_headers()
+            return BytesIO(motion_json.encode())
+        
         elif 'url1' in query and 'url2' in query:
             motion = sampler.connect(query['url1'][0], query['url2'][0]) # motion1, motion2
             motion_json = json.dumps(renderer.render(motion))
@@ -104,9 +114,10 @@ class meshHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         
 
 if __name__ == '__main__':
-    # set_start_method('spawn')
-    args = sample_args()
-    sampler = sample.Sampler(args)
+
+    # args = sample_args()
+    sampler = sample.Sampler(sample_args())
+    quality_editor = sample.QualityEditor(edit_args())
     renderer = visualize.vis_utils.npyobj2dict()
     executer = Executor()
 

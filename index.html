@@ -371,7 +371,7 @@
                         <div style="margin-right: 10%; margin-bottom: 5%;">
                             <div style="display: flex; flex-direction: row;">
                                 <h5>Choose a quality factor: </h5>
-                                <select name="Quality" id="quality" style="margin-left: 3%; height:3em;">
+                                <select name="Quality" id="quality_dropdown" style="margin-left: 3%; height:3em;">
                                     <option value="">--Please choose an option--</option>
                                     <option value="Angry">Angry</option>
                                     <option value="Childlike">Childlike</option>
@@ -380,7 +380,7 @@
                                     <option value="Proud">Proud</option>
                                     <option value="Strutting">Strutting</option>
                                 </select>
-                                <button style="margin-left: 3%; width: 80px; height:3em;">Edit</button>
+                                <button style="margin-left: 3%; width: 80px; height:3em;" onclick="clickQualityEditBtn(this)">Edit</button>
                             </div>
                         </div>
                         <hr style="height:2px; border-width:0; color:lightgray; background-color:lightgray">

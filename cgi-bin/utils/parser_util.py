@@ -87,6 +87,39 @@ def add_model_options(parser):
                        help="Model is trained unconditionally. That is, it is constrained by neither text nor action. "
                             "Currently tested on HumanAct12 only.")
 
+    # UNET options
+    group.add_argument("--image_size", default=64, type=int, help="")
+    group.add_argument("--num_channels", default=128, type=int, help="")
+    group.add_argument("--num_res_blocks", default=2, type=int, help="")
+    group.add_argument("--num_heads", default=4, type=int, help="")
+    group.add_argument("--num_heads_upsample", default=-1, type=int, help="")
+    group.add_argument("--num_head_channels", default=-1, type=int, help="")
+    group.add_argument("--attention_resolutions", default="16,8", type=str, help="")
+    group.add_argument("--channel_mult", default="", type=str, help="")
+    group.add_argument("--learn_sigma", action='store_true', help="")
+    group.add_argument("--dropout", default=0.0, type=float, help="")
+    group.add_argument("--class_cond", action='store_true', help="")
+    group.add_argument("--use_checkpoint", action='store_true', help="")
+    group.add_argument("--use_scale_shift_norm", action='store_true', help="")
+    group.add_argument("--resblock_updown", action='store_true', help="")
+    group.add_argument("--use_fp16", action='store_true', help="")
+    group.add_argument("--use_new_attention_order", action='store_true', help="")
+    group.add_argument("--conv_1d", action='store_true', help="")
+    group.add_argument("--padding_mode", default='replicate', choices=['zeros', 'reflect', 'replicate', 'circular'], type=str,
+                       help="Padding mode during convolution. One of ['zeros', 'reflect', 'replicate', 'circular'].")
+    group.add_argument("--padding", default=1, type=int, help="")
+    group.add_argument("--lr_method", default=None, type=str, help="")
+    group.add_argument("--lr_step", default=None, type=int, help="")
+    group.add_argument("--lr_gamma", default=None, type=float, help="")
+
+    # QnA Options:
+    group.add_argument("--head_dim", default=32, type=int, help="")
+    group.add_argument("--num_downsample", default=0, type=int, help="")
+    group.add_argument("--drop_path", default=0.5, type=float, help="")
+    group.add_argument("--use_diffusion_query", action='store_true', help="")
+    group.add_argument("--kernel_size", default=7, type=int, help="")
+    group.add_argument("--use_global_pe", action="store_true", help="")
+
 
 
 def add_data_options(parser):
@@ -181,6 +214,9 @@ def add_edit_options(parser):
                        help="For in_between editing - Defines the start of input suffix (ratio from all frames).")
     group.add_argument("--outpainting_length", default=5.2, type=float,
                        help="For outpainting editing - Defines the length of outpainting motion in secs.")
+    group.add_argument("--ref_motion", type=str, default="", required=False,
+                       help="Refenrence motion to be used for editing.")
+
 
 
 def add_evaluation_options(parser):
